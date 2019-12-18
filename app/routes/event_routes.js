@@ -29,11 +29,13 @@ const router = express.Router()
 
 // INDEX
 // GET /events
-router.get('/events', requireToken, (req, res, next) => {
+router.get('/events', (req, res, next) => {
   
   // Option 1 get user's events
-  Event.find({orginzer: req.user.id})
-    .then(events => res.status(200).json({events: events}))
+  Event.find()
+    .then(events => {
+      res.status(200).json({events: events})
+    })
     .catch(next)
   
   // // Option 2 get user's events
@@ -46,7 +48,7 @@ router.get('/events', requireToken, (req, res, next) => {
 
 // SHOW
 // GET /events/5a7db6c74d55bc51bdf39793
-router.get('/events/:id', requireToken, (req, res, next) => {
+router.get('/events/:id', (req, res, next) => {
   // req.params.id will be set based on the `:id` in the route
   Event.findById(req.params.id)
     .then(handle404)
@@ -64,10 +66,10 @@ router.get('/events/:id', requireToken, (req, res, next) => {
 
 // CREATE
 // POST /events
-router.post('/events', requireToken, (req, res, next) => {
+router.post('/events/createEvent', requireToken, (req, res, next) => {
   // set owner of new event to be current user
-  req.body.event.orginzer = req.user.id
 
+  req.body.event.orginzer = req.user.id
   Event.create(req.body.event)
     // respond to succesful `create` with status 201 and JSON of new "event"
     .then(event => {
@@ -81,37 +83,37 @@ router.post('/events', requireToken, (req, res, next) => {
 
 // UPDATE
 // PATCH /events/5a7db6c74d55bc51bdf39793
-router.patch('/events/:id', requireToken, removeBlanks, (req, res, next) => {
+router.patch('/events/update/:id', removeBlanks, (req, res, next) => {
   // if the client attempts to change the `owner` property by including a new
   // owner, prevent that by deleting that key/value pair
-  delete req.body.event.orginzer
+  // delete req.body.event.orginzer
 
   Event.findById(req.params.id)
     .then(handle404)
     .then(event => {
       // pass the `req` object and the Mongoose record to `requireOwnership`
       // it will throw an error if the current user isn't the orginzer
-      requireOwnership(req, event)
+      // requireOwnership(req, event)
 
       // pass the result of Mongoose's `.update` to the next `.then`
       return event.update(req.body.event)
     })
     // if that succeeded, return 204 and no JSON
-    .then(() => res.status(204))
+    .then(() => res.status(204).end())
     // if an error occurs, pass it to the handler
     .catch(next)
 })
 
 // DESTROY
 // DELETE /events/5a7db6c74d55bc51bdf39793
-router.delete('/events/:id', requireToken, (req, res, next) => {
+router.delete('/events/delete/:id', (req, res, next) => {
   Event.findById(req.params.id)
     .then(handle404)
     .then(event => {
       // throw an error if current user doesn't own `event`
-      requireOwnership(req, event)
-      // delete the example ONLY IF the above didn't throw
-      example.remove()
+      // requireOwnership(req, event)
+      // delete the event ONLY IF the above didn't throw
+      event.remove()
     })
     // send back 204 and no content if the deletion succeeded
     .then(() => res.sendStatus(204))
